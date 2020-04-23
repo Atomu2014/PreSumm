@@ -30,23 +30,26 @@ if __name__ == '__main__':
     parser.add_argument("-task", default='ext', type=str, choices=['ext', 'abs'])
     parser.add_argument("-encoder", default='bert', type=str, choices=['bert', 'baseline'])
     parser.add_argument("-mode", default='train', type=str, choices=['train', 'validate', 'test'])
-    parser.add_argument("-bert_data_path", default='../bert_data_new/cnndm')
+    parser.add_argument("-bert_data_path", default='../bert_data/xsum')
     parser.add_argument("-model_path", default='../models/')
-    parser.add_argument("-result_path", default='../results/cnndm')
+    parser.add_argument("-result_path", default='../results/xsum')
     parser.add_argument("-temp_dir", default='../temp')
 
-    parser.add_argument("-batch_size", default=140, type=int)
+    parser.add_argument("-batch_size", default=140, type=int, help='3000 for ext')
     parser.add_argument("-test_batch_size", default=200, type=int)
 
     parser.add_argument("-max_pos", default=512, type=int)
-    parser.add_argument("-use_interval", type=str2bool, nargs='?',const=True,default=True)
-    parser.add_argument("-large", type=str2bool, nargs='?',const=True,default=False)
+    parser.add_argument("-use_interval", type=str2bool, nargs='?', const=True, default=True)
+    parser.add_argument("-large", type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument("-load_from_extractive", default='', type=str)
 
-    parser.add_argument("-sep_optim", type=str2bool, nargs='?',const=True,default=False)
+    # python train.py -task ext -mode train -model_path MODEL_PATH -save_checkpoint_steps 1000 -batch_size 3000 -train_steps 50000 -accum_count 2 -log_file ../logs/ext_bert_cnndm
+    # python train.py -task abs -mode train -sep_optim true -use_bert_emb true -model_path ../models/ -log_file ../logs/abs_bert_cnndm
+    # python train.py -task abs -mode train -sep_optim true -use_bert_emb true -model_path ../models/ -log_file ../logs/abs_bert_cnndm  -load_from_extractive EXT_CKPT
+    parser.add_argument("-sep_optim", type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument("-lr_bert", default=2e-3, type=float)
-    parser.add_argument("-lr_dec", default=2e-3, type=float)
-    parser.add_argument("-use_bert_emb", type=str2bool, nargs='?',const=True,default=False)
+    parser.add_argument("-lr_dec", default=0.2, type=float)
+    parser.add_argument("-use_bert_emb", type=str2bool, nargs='?', const=True, default=False)
 
     parser.add_argument("-share_emb", type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument("-finetune_bert", type=str2bool, nargs='?', const=True, default=True)
@@ -61,7 +64,7 @@ if __name__ == '__main__':
     parser.add_argument("-enc_layers", default=6, type=int)
 
     # params for EXT
-    parser.add_argument("-ext_dropout", default=0.2, type=float)
+    parser.add_argument("-ext_dropout", default=0.1, type=float)
     parser.add_argument("-ext_layers", default=2, type=int)
     parser.add_argument("-ext_hidden_size", default=768, type=int)
     parser.add_argument("-ext_heads", default=8, type=int)
@@ -80,24 +83,24 @@ if __name__ == '__main__':
     parser.add_argument("-param_init", default=0, type=float)
     parser.add_argument("-param_init_glorot", type=str2bool, nargs='?',const=True,default=True)
     parser.add_argument("-optim", default='adam', type=str)
-    parser.add_argument("-lr", default=1, type=float)
+    parser.add_argument("-lr", default=2e-3, type=float)
     parser.add_argument("-beta1", default= 0.9, type=float)
     parser.add_argument("-beta2", default=0.999, type=float)
-    parser.add_argument("-warmup_steps", default=8000, type=int)
-    parser.add_argument("-warmup_steps_bert", default=8000, type=int)
-    parser.add_argument("-warmup_steps_dec", default=8000, type=int)
+    parser.add_argument("-warmup_steps", default=10000, type=int, help='10000 for ext')
+    parser.add_argument("-warmup_steps_bert", default=20000, type=int)
+    parser.add_argument("-warmup_steps_dec", default=10000, type=int)
     parser.add_argument("-max_grad_norm", default=0, type=float)
 
-    parser.add_argument("-save_checkpoint_steps", default=5, type=int)
-    parser.add_argument("-accum_count", default=1, type=int)
-    parser.add_argument("-report_every", default=1, type=int)
-    parser.add_argument("-train_steps", default=1000, type=int)
+    parser.add_argument("-save_checkpoint_steps", default=2000, type=int, help='1000 for ext')
+    parser.add_argument("-accum_count", default=5, type=int, help='2 for ext')
+    parser.add_argument("-report_every", default=50, type=int)
+    parser.add_argument("-train_steps", default=200000, type=int, help='50000 for ext')
     parser.add_argument("-recall_eval", type=str2bool, nargs='?',const=True,default=False)
 
 
-    parser.add_argument('-visible_gpus', default='-1', type=str)
+    parser.add_argument('-visible_gpus', default='0', type=str)
     parser.add_argument('-gpu_ranks', default='0', type=str)
-    parser.add_argument('-log_file', default='../logs/cnndm.log')
+    parser.add_argument('-log_file', default='../logs/xsum.log')
     parser.add_argument('-seed', default=666, type=int)
 
     parser.add_argument("-test_all", type=str2bool, nargs='?',const=True,default=False)
@@ -105,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument("-test_start_from", default=-1, type=int)
 
     parser.add_argument("-train_from", default='')
-    parser.add_argument("-report_rouge", type=str2bool, nargs='?',const=True,default=True)
+    parser.add_argument("-report_rouge", type=str2bool, nargs='?', const=True,default=True)
     parser.add_argument("-block_trigram", type=str2bool, nargs='?', const=True, default=True)
 
     args = parser.parse_args()
