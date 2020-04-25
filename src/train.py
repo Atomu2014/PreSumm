@@ -6,9 +6,12 @@ from __future__ import division
 
 import argparse
 import os
-from others.logging import init_logger
+from others.logging import init_logger, logger
 from train_abstractive import validate_abs, train_abs, baseline, test_abs, test_text_abs
 from train_extractive import train_ext, validate_ext, test_ext
+from models.predictor import build_predictor
+from pytorch_transformers import BertTokenizer
+from others.utils import rouge_results_to_str
 
 model_flags = ['hidden_size', 'ff_size', 'heads', 'emb_size', 'enc_layers', 'enc_hidden_size', 'enc_ff_size',
                'dec_layers', 'dec_hidden_size', 'dec_ff_size', 'encoder', 'ff_actv', 'use_interval']
@@ -29,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-task", default='ext', type=str, choices=['ext', 'abs'])
     parser.add_argument("-encoder", default='bert', type=str, choices=['bert', 'baseline'])
-    parser.add_argument("-mode", default='train', type=str, choices=['train', 'validate', 'test'])
+    parser.add_argument("-mode", default='train', type=str, choices=['train', 'validate', 'test', 'score'])
     parser.add_argument("-bert_data_path", default='../bert_data/xsum')
     parser.add_argument("-model_path", default='../models/')
     parser.add_argument("-result_path", default='../results/xsum')
@@ -43,9 +46,6 @@ if __name__ == '__main__':
     parser.add_argument("-large", type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument("-load_from_extractive", default='', type=str)
 
-    # python train.py -task ext -mode train -model_path MODEL_PATH -save_checkpoint_steps 1000 -batch_size 3000 -train_steps 50000 -accum_count 2 -log_file ../logs/ext_bert_cnndm
-    # python train.py -task abs -mode train -sep_optim true -use_bert_emb true -model_path ../models/ -log_file ../logs/abs_bert_cnndm
-    # python train.py -task abs -mode train -sep_optim true -use_bert_emb true -model_path ../models/ -log_file ../logs/abs_bert_cnndm  -load_from_extractive EXT_CKPT
     parser.add_argument("-sep_optim", type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument("-lr_bert", default=2e-3, type=float)
     parser.add_argument("-lr_dec", default=0.2, type=float)
@@ -125,6 +125,21 @@ if __name__ == '__main__':
             train_abs(args, device_id)
         elif (args.mode == 'validate'):
             validate_abs(args, device_id)
+        elif (args.mode == 'score'):
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True, cache_dir=args.temp_dir)
+            symbols = {'BOS': tokenizer.vocab['[unused0]'], 'EOS': tokenizer.vocab['[unused1]'],
+                       'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
+            predictor = build_predictor(args, tokenizer, symbols, None, logger)
+
+            step = 30000
+            gold_path = args.result_path + '.%d.gold' % step
+            can_path = args.result_path + '.%d.candidate' % step
+            rouges = predictor._report_rouge(gold_path, can_path)
+            logger.info('Rouges at step %d \n%s' % (step, rouge_results_to_str(rouges)))
+            # if self.tensorboard_writer is not None:
+            #     self.tensorboard_writer.add_scalar('test/rouge1-F', rouges['rouge_1_f_score'], step)
+            #     self.tensorboard_writer.add_scalar('test/rouge2-F', rouges['rouge_2_f_score'], step)
+            #     self.tensorboard_writer.add_scalar('test/rougeL-F', rouges['rouge_l_f_score'], step)
         elif (args.mode == 'lead'):
             baseline(args, cal_lead=True)
         elif (args.mode == 'oracle'):
