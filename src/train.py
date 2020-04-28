@@ -131,11 +131,11 @@ if __name__ == '__main__':
                        'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
             predictor = build_predictor(args, tokenizer, symbols, None, logger)
 
-            step = 30000
-            gold_path = args.result_path + '.%d.gold' % step
-            can_path = args.result_path + '.%d.candidate' % step
+            # step = 30000
+            gold_path = args.result_path + '.gold'
+            can_path = args.result_path + '.candidate'
             rouges = predictor._report_rouge(gold_path, can_path)
-            logger.info('Rouges at step %d \n%s' % (step, rouge_results_to_str(rouges)))
+            logger.info('Rouges at step %d \n%s' % (args.result_path, rouge_results_to_str(rouges)))
             # if self.tensorboard_writer is not None:
             #     self.tensorboard_writer.add_scalar('test/rouge1-F', rouges['rouge_1_f_score'], step)
             #     self.tensorboard_writer.add_scalar('test/rouge2-F', rouges['rouge_2_f_score'], step)
